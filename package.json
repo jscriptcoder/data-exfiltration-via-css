@@ -1,0 +1,19 @@
+{
+  "name": "data-exfiltration-via-css",
+  "version": "0.1.0",
+  "description": "Proof of concept to exfiltrate data injecting css",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jscriptcoder/data-exfiltration-via-css.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jscriptcoder/data-exfiltration-via-css/issues"
+  },
+  "homepage": "https://github.com/jscriptcoder/data-exfiltration-via-css#readme"
+}
