@@ -1,8 +1,7 @@
 const http = require('http')
 const url = require('url')
 
-const PORT = 5000
-const HOSTNAME = `https://data-exfiltration-via-css.vercel.app:${PORT}`
+const HOSTNAME = `https://data-exfiltration-via-css.vercel.app`
 
 let prefix = ''
 let postfix = ''
@@ -153,7 +152,7 @@ const requestHandler = (request, response) => {
 
 const server = http.createServer(requestHandler)
 
-server.listen(PORT, (err) => {
+server.listen(80, (err) => {
   if (err) {
     return console.log('[-] Error: something bad happened', err)
   }
