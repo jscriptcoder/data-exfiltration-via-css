@@ -107,11 +107,4 @@ const requestHandler = (request, response) => {
   }
 }
 
-const server = http.createServer(requestHandler)
-
-server.listen(80, (err) => {
-  if (err) {
-    return console.log('[-] Error: something bad happened', err)
-  }
-  console.log('[+] Server is listening on %d', 80)
-})
+http.createServer(requestHandler)
