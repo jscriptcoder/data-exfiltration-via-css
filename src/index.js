@@ -107,4 +107,6 @@ const requestHandler = (request, response) => {
   }
 }
 
-http.createServer(requestHandler)
+const server = http.createServer(requestHandler)
+
+server.listen()
