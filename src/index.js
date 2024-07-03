@@ -97,7 +97,9 @@ const requestHandler = (request, response) => {
       generateResponse(response)
       break
     case '/leak':
-      console.log('leak: %s', req.query)
+      if (req.query.pre) console.log('pre: %s', req.query.pre)
+      if (req.query.post) console.log('post: %s', req.query.post)
+
       response.end()
       break
     default:
