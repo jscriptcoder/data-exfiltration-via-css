@@ -111,6 +111,8 @@ const requestHandler = (request, response) => {
   if (stop) return response.end()
 
   switch (req.pathname) {
+    case '/':
+      response.end("You know I'm, I'm bad, you know it!!")
     case '/start':
       generateResponse(response)
       break
