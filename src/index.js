@@ -50,7 +50,7 @@ const requestHandler = (request, response) => {
       stop = true
       console.log('[+] END: %s', req.query.token)
     default:
-      response.end()
+      response.end('Hello attacker!')
   }
 }
 
